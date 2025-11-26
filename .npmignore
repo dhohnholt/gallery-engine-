@@ -1,0 +1,24 @@
+# Don’t publish tarballs
+*.tgz
+
+# Environment
+.env
+
+# Dependencies
+node_modules/
+
+# Source files (library consumers only need dist/)
+src/
+
+# Git + VSCode stuff
+.git/
+.gitignore
+.vscode/
+
+# Netlify & Supabase config
+netlify/
+supabase/
+
+# Maps + TypeScript build noise
+dist/**/*.map
+dist/**/*.d.ts.map

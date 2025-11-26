@@ -28,19 +28,63 @@
   "exports": {
     "./react/supabaseClient": {
       "import": "./dist/src/react/supabaseClient.js",
-      "require": "./dist/src/react/supabaseClient.js"
+      "require": "./dist/src/react/supabaseClient.js",
+      "types": "./dist/src/react/supabaseClient.d.ts"
     },
-    "./react/pages/MagicGalleryPage": "./dist/src/react/pages/MagicGalleryPage.js",
-    "./react/pages/TeamGalleryPage": "./dist/src/react/pages/TeamGalleryPage.js",
-    "./react/pages/PlayerGalleryPage": "./dist/src/react/pages/PlayerGalleryPage.js",
-    "./react/components/WaterfallGallery": "./dist/src/react/components/WaterfallGallery.js",
-    "./react/components/Lightbox": "./dist/src/react/components/Lightbox.js",
-    "./react/components/GalleryCard": "./dist/src/react/components/GalleryCard.js",
-    "./react/hooks/useGalleryData": "./dist/src/react/hooks/useGalleryData.js",
-    "./react/hooks/useGalleryByMagicLink": "./dist/src/react/hooks/useGalleryByMagicLink.js",
-    "./lib/*": {
-      "node": "./dist/src/lib/*.js",
-      "default": false
+    "./react/pages/MagicGalleryPage": {
+      "import": "./dist/src/react/pages/MagicGalleryPage.js",
+      "require": "./dist/src/react/pages/MagicGalleryPage.js",
+      "types": "./dist/src/react/pages/MagicGalleryPage.d.ts"
+    },
+    "./react/pages/TeamGalleryPage": {
+      "import": "./dist/src/react/pages/TeamGalleryPage.js",
+      "require": "./dist/src/react/pages/TeamGalleryPage.js",
+      "types": "./dist/src/react/pages/TeamGalleryPage.d.ts"
+    },
+    "./react/pages/PlayerGalleryPage": {
+      "import": "./dist/src/react/pages/PlayerGalleryPage.js",
+      "require": "./dist/src/react/pages/PlayerGalleryPage.js",
+      "types": "./dist/src/react/pages/PlayerGalleryPage.d.ts"
+    },
+    "./react/components/WaterfallGallery": {
+      "import": "./dist/src/react/components/WaterfallGallery.js",
+      "require": "./dist/src/react/components/WaterfallGallery.js",
+      "types": "./dist/src/react/components/WaterfallGallery.d.ts"
+    },
+    "./react/components/Lightbox": {
+      "import": "./dist/src/react/components/Lightbox.js",
+      "require": "./dist/src/react/components/Lightbox.js",
+      "types": "./dist/src/react/components/Lightbox.d.ts"
+    },
+    "./react/components/GalleryCard": {
+      "import": "./dist/src/react/components/GalleryCard.js",
+      "require": "./dist/src/react/components/GalleryCard.js",
+      "types": "./dist/src/react/components/GalleryCard.d.ts"
+    },
+    "./react/hooks/useGalleryData": {
+      "import": "./dist/src/react/hooks/useGalleryData.js",
+      "require": "./dist/src/react/hooks/useGalleryData.js",
+      "types": "./dist/src/react/hooks/useGalleryData.d.ts"
+    },
+    "./react/hooks/useGalleryByMagicLink": {
+      "import": "./dist/src/react/hooks/useGalleryByMagicLink.js",
+      "require": "./dist/src/react/hooks/useGalleryByMagicLink.js",
+      "types": "./dist/src/react/hooks/useGalleryByMagicLink.d.ts"
+    },
+    "./lib/dropbox": {
+      "import": "./dist/src/lib/dropbox.js",
+      "require": "./dist/src/lib/dropbox.js",
+      "types": "./dist/src/lib/dropbox.d.ts"
+    },
+    "./lib/dropboxAuth": {
+      "import": "./dist/src/lib/dropboxAuth.js",
+      "require": "./dist/src/lib/dropboxAuth.js",
+      "types": "./dist/src/lib/dropboxAuth.d.ts"
+    },
+    "./lib/syncFromDropbox": {
+      "import": "./dist/src/sync/syncFromDropbox.js",
+      "require": "./dist/src/sync/syncFromDropbox.js",
+      "types": "./dist/src/sync/syncFromDropbox.d.ts"
     }
   }
 }

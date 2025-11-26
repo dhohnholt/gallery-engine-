@@ -1,0 +1,3 @@
+-- Add RLS policies here once you're ready.
+-- For early testing, you can keep RLS OFF on these tables,
+-- or only enable RLS with simple "true" policies.

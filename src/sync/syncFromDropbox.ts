@@ -1,4 +1,10 @@
-import { listFolders, listImages, ensureDirectLink } from "../lib/dropbox.js";
+import {
+  ensureDirectLink,
+  listFolders,
+  listImages,
+  normalizeRootPath,
+  resolveDropboxRootPath,
+} from "../lib/dropbox.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import type * as types from "../lib/types";
 
@@ -20,8 +26,17 @@ function prettifyTitle(name: string): string {
 }
 
 export async function syncFromDropbox(): Promise<void> {
-  const rootPath = process.env.DROPBOX_ROOT_PATH || "/";
+  const normalizedRootPath = normalizeRootPath(process.env.DROPBOX_ROOT_PATH);
 
+  if (!normalizedRootPath) {
+    throw new Error(
+      "Refusing to sync entire Dropbox. Set DROPBOX_ROOT_PATH to a valid folder (e.g. /Triple-H-Media)."
+    );
+  }
+
+  const rootPath = resolveDropboxRootPath();
+
+  console.log("Syncing only:", normalizedRootPath);
   console.log("🔄 Starting Dropbox → Supabase sync from:", rootPath);
 
   const folders = await listFolders(rootPath);

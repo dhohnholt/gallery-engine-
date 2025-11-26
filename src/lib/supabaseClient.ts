@@ -10,9 +10,12 @@ if (!url) {
   throw new Error("SUPABASE_URL is not set in environment variables");
 }
 
-if (!anonKey) {
+const hasAnonKey = Boolean(anonKey);
+const hasServiceRoleKey = Boolean(serviceRoleKey);
+
+if (!hasAnonKey && !hasServiceRoleKey) {
   console.warn(
-    "[gallery-engine] SUPABASE_ANON_KEY is not set; anon client may not work."
+    "[gallery-engine] Neither SUPABASE_ANON_KEY nor SUPABASE_SERVICE_ROLE_KEY is set; Supabase clients will not work."
   );
 }
 

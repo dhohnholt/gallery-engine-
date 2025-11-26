@@ -1,6 +1,16 @@
-// scripts/run-sync.ts
-import "dotenv/config";
-const getSyncModule = async () => (await import(new URL("../src/sync/syncFromDropbox.js", import.meta.url).href));
+// src/scripts/run-sync.ts
+// Auto-load .env before anything else
+import dotenv from "dotenv";
+import path from "path";
+// Load .env from project root
+dotenv.config({
+    path: path.resolve(process.cwd(), ".env"),
+});
+const getSyncModule = async () => {
+    const modulePath = new URL("../sync/syncFromDropbox.js", import.meta.url)
+        .href;
+    return (await import(modulePath));
+};
 (async () => {
     console.log("🔄 Running Dropbox → Supabase sync...");
     try {

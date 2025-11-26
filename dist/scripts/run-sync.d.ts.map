@@ -1,1 +1,1 @@
-{"version":3,"file":"run-sync.d.ts","sourceRoot":"","sources":["../../scripts/run-sync.ts"],"names":[],"mappings":"AAEA,OAAO,eAAe,CAAC"}
+{"version":3,"file":"run-sync.d.ts","sourceRoot":"","sources":["../../src/scripts/run-sync.ts"],"names":[],"mappings":""}

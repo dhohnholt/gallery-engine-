@@ -3,22 +3,18 @@ import { Dropbox } from "dropbox";
 import fetch from "node-fetch";
 import { getDropboxAccessToken } from "./dropboxAuth.js";
 
+/* ---------------------------------------------
+   NORMALIZE ROOT PATH
+--------------------------------------------- */
 export const normalizeRootPath = (value?: string | null): string => {
-  if (!value) {
-    return "";
-  }
-
+  if (!value) return "";
   const trimmed = value.trim();
-  if (!trimmed || trimmed === "/") {
-    return "";
-  }
+  if (!trimmed || trimmed === "/") return "";
 
   let normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-
   if (normalized.length > 1 && normalized.endsWith("/")) {
     normalized = normalized.replace(/\/+$/, "");
   }
-
   return normalized;
 };
 
@@ -32,50 +28,52 @@ if (!dropboxRootPath) {
 
 const dropboxRootPathLower = dropboxRootPath.toLowerCase();
 
+/* ---------------------------------------------
+   VALIDATE PATHS
+--------------------------------------------- */
 const ensureWithinRoot = (value: string): string => {
   const normalized = normalizeRootPath(value);
-
-  if (!normalized) {
-    throw new Error("Dropbox path cannot be empty.");
-  }
+  if (!normalized) throw new Error("Dropbox path cannot be empty.");
 
   if (!normalized.toLowerCase().startsWith(dropboxRootPathLower)) {
     throw new Error(
       `Attempted to walk outside root path "${dropboxRootPath}" with "${value}".`
     );
   }
-
   return normalized;
 };
 
 export const resolveDropboxRootPath = (override?: string): string => {
-  if (override) {
-    return ensureWithinRoot(override);
-  }
-
-  return dropboxRootPath;
+  return override ? ensureWithinRoot(override) : dropboxRootPath;
 };
 
-// Extensions you allow — unchanged
-const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+/* ---------------------------------------------
+   ALLOWED IMAGE EXTENSIONS
+--------------------------------------------- */
+const allowedExtensions = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".bmp",
+  ".tif",
+  ".heic",
+];
 
-// ---------------------------------------------
-// INTERNAL: build a fresh Dropbox client
-// ---------------------------------------------
+/* ---------------------------------------------
+   CLIENT CREATION + TOKEN REFRESH
+--------------------------------------------- */
 async function makeClient() {
-  const token = await getDropboxAccessToken(); // <-- FIXED
+  const token = await getDropboxAccessToken();
   return new Dropbox({
     accessToken: token,
     fetch: fetch as any,
   });
 }
 
-// ---------------------------------------------
-// INTERNAL: wrap all Dropbox calls with auto-refresh
-// ---------------------------------------------
 async function withRetry<T>(fn: (client: Dropbox) => Promise<T>): Promise<T> {
   let client = await makeClient();
-
   try {
     return await fn(client);
   } catch (err: any) {
@@ -88,28 +86,23 @@ async function withRetry<T>(fn: (client: Dropbox) => Promise<T>): Promise<T> {
     if (!expired) throw err;
 
     console.warn("🔁 Dropbox token expired — refreshing…");
-
     client = await makeClient();
     return await fn(client);
   }
 }
 
-// ---------------------------------------------
-// Convert Dropbox shared link → direct raw URL
-// ---------------------------------------------
+/* ---------------------------------------------
+   SHARED-LINK CONVERSION
+--------------------------------------------- */
 function toDirectUrl(sharedUrl: string): string {
   if (sharedUrl.includes("dl=0")) return sharedUrl.replace("dl=0", "raw=1");
   if (sharedUrl.includes("?")) return `${sharedUrl}&raw=1`;
   return `${sharedUrl}?raw=1`;
 }
 
-// ---------------------------------------------
-// Check if error is “shared link already exists”
-// ---------------------------------------------
 function isLinkExistsError(error: unknown): boolean {
   const err = error as Record<string, any>;
   const inner = err?.error?.error ?? err?.error?.value ?? err;
-
   return (
     inner?.shared_link_already_exists === true ||
     inner?.error_summary?.includes("shared_link_already_exists") ||
@@ -117,14 +110,9 @@ function isLinkExistsError(error: unknown): boolean {
   );
 }
 
-// ---------------------------------------------
-// Try to load existing shared link
-// ---------------------------------------------
 async function getExistingSharedLink(client: Dropbox, path: string) {
-  const targetPath = ensureWithinRoot(path);
-
   const links = await client.sharingListSharedLinks({
-    path: targetPath,
+    path,
     direct_only: true,
   });
 
@@ -132,9 +120,9 @@ async function getExistingSharedLink(client: Dropbox, path: string) {
   return url ? toDirectUrl(url) : null;
 }
 
-// ---------------------------------------------
-// PUBLIC: List folders
-// ---------------------------------------------
+/* ---------------------------------------------
+   PUBLIC: LIST TOP-LEVEL FOLDERS ONLY
+--------------------------------------------- */
 export async function listFolders(
   rootPath?: string
 ): Promise<{ id: string; name: string; path_lower: string }[]> {
@@ -145,70 +133,71 @@ export async function listFolders(
   return withRetry(async (client) => {
     const response = await client.filesListFolder({
       path: resolvedRootPath,
-      recursive: false,
+      recursive: false, // <-- STAYS FALSE so we don't create nested galleries!
     });
 
     const entries = response.result?.entries ?? [];
-
     return entries
       .filter((e) => e[".tag"] === "folder")
-      .map((entry: any) => {
-        const folderPath = entry.path_lower ?? entry.path_display;
-
-        if (!folderPath) {
-          throw new Error("Dropbox folder entry missing path.");
-        }
-
-        return {
-          id: entry.id,
-          name: entry.name,
-          path_lower: ensureWithinRoot(folderPath),
-        };
-      });
+      .map((entry: any) => ({
+        id: entry.id,
+        name: entry.name,
+        path_lower: ensureWithinRoot(entry.path_lower),
+      }));
   });
 }
 
-// ---------------------------------------------
-// PUBLIC: List images inside a Dropbox folder
-// ---------------------------------------------
+/* ---------------------------------------------
+   PUBLIC: RECURSIVE IMAGE SCANNING
+   WITH PAGINATION SUPPORT
+--------------------------------------------- */
 export async function listImages(folderPath: string) {
   const targetFolderPath = ensureWithinRoot(folderPath);
 
   return withRetry(async (client) => {
-    const response = await client.filesListFolder({
+    let entries: any[] = [];
+
+    // Initial request
+    let response = await client.filesListFolder({
       path: targetFolderPath,
-      recursive: false,
+      recursive: true,
     });
 
-    const entries = response.result?.entries ?? [];
+    entries = [...entries, ...(response.result?.entries ?? [])];
+
+    // Pagination support
+    while (response.result?.has_more) {
+      response = await client.filesListFolderContinue({
+        cursor: response.result.cursor,
+      });
+      entries = [...entries, ...(response.result?.entries ?? [])];
+    }
 
     return entries
       .filter((e) => e[".tag"] === "file")
       .filter((e) =>
         allowedExtensions.some((ext) =>
-          (e.name as string).toLowerCase().endsWith(ext)
+          e.name.toLowerCase().endsWith(ext.toLowerCase())
         )
       )
       .map((entry: any) => {
         const filePath = entry.path_lower ?? entry.path_display;
-
-        if (!filePath) {
-          throw new Error("Dropbox file entry missing path.");
-        }
+        if (!filePath) throw new Error("Dropbox file entry missing path.");
 
         return {
           id: entry.id,
           name: entry.name,
           path_lower: ensureWithinRoot(filePath),
           size: entry.size,
+          rev: entry.rev,
         };
       });
   });
 }
 
-// ---------------------------------------------
-// PUBLIC: Ensure a DIRECT downloadable Dropbox URL
-// ---------------------------------------------
+/* ---------------------------------------------
+   PUBLIC: ENSURE DIRECT LINK
+--------------------------------------------- */
 export async function ensureDirectLink(filePath: string): Promise<string> {
   const targetPath = ensureWithinRoot(filePath);
 
@@ -222,14 +211,12 @@ export async function ensureDirectLink(filePath: string): Promise<string> {
         settings: { requested_visibility: "public" } as any,
       });
 
-      const url = created.result.url as string;
-      return toDirectUrl(url);
+      return toDirectUrl(created.result.url);
     } catch (err) {
       if (isLinkExistsError(err)) {
         const fallback = await getExistingSharedLink(client, targetPath);
         if (fallback) return fallback;
       }
-
       throw err;
     }
   });

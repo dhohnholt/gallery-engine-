@@ -32,6 +32,7 @@ export interface GalleryImage {
   gallery_id: string;
   storage_path: string;
   public_url: string;
+  rev: string | null;
 
   // Sorting / display
   display_order: number;

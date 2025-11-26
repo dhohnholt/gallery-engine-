@@ -16,6 +16,6 @@
     "jsx": "react-jsx",
     "types": ["node"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/run-transform.js"],
   "exclude": ["dist", "node_modules"]
 }

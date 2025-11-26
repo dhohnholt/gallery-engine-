@@ -16,12 +16,21 @@ export interface Gallery {
   created_at: string;
 }
 
+export interface DropboxFile {
+  id: string;
+  name: string;
+  path_lower: string;
+  size: number;
+  rev: string; // 🔥 NEW
+}
+
 // --- FIX THIS ONE ---
 export interface GalleryImage {
   id: string;
   gallery_id: string;
   storage_path: string;
   public_url: string;
+  rev: string | null;
 
   // 👇 REQUIRED FIELDS
   thumb_url?: string | null;

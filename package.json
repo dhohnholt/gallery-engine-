@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "transform": "node scripts/run-transform.js",
     "sync": "node dist/scripts/run-sync.js",
     "get-dropbox-refresh-token": "node src/scripts/get-dropbox-refresh-token.js"
   },

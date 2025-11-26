@@ -16,7 +16,7 @@ const getSyncModule = async () => {
     try {
         const { syncFromDropbox } = await getSyncModule();
         await syncFromDropbox();
-        console.log("✅ Sync completed successfully.");
+        console.log("✅ Sync completed successfully. NOW RUN npm run transform");
     }
     catch (err) {
         console.error("❌ Sync failed:", err);

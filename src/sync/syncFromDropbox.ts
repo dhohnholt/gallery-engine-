@@ -22,10 +22,10 @@ function prettifyTitle(name: string): string {
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
 }
 
-export async function syncFromDropbox(): Promise<void> {
+export async function syncFromDropbox() {
   const normalizedRootPath = normalizeRootPath(process.env.DROPBOX_ROOT_PATH);
 
   if (!normalizedRootPath) {
@@ -48,8 +48,9 @@ export async function syncFromDropbox(): Promise<void> {
     const description = `Photos for ${title}`;
     const dropboxPath = folder.path_lower;
 
-    console.log(`📁 Syncing gallery folder: ${folder.name} (${dropboxPath})`);
+    console.log(`\n📁 Syncing gallery: ${folder.name} (${dropboxPath})`);
 
+    // --- Upsert gallery ---
     const { data: galleryRow, error: galleryError } = await supabaseAdmin
       .from("galleries")
       .upsert({ slug, title, description }, { onConflict: "slug" })
@@ -67,39 +68,60 @@ export async function syncFromDropbox(): Promise<void> {
       continue;
     }
 
+    // 🔍 GET ALL FILES (recursive)
     const files = await listImages(dropboxPath);
-    console.log(`   📸 Found ${files.length} image(s) in "${folder.name}".`);
+    console.log(
+      `   📸 Found ${files.length} images (recursive) in "${folder.name}".`
+    );
 
     let sortIndex = 0;
 
     for (const file of files) {
+      // Check existing DB row
+      const { data: existingRows } = await supabaseAdmin
+        .from("gallery_images")
+        .select("id, rev")
+        .eq("storage_path", file.path_lower)
+        .limit(1);
+
+      const existing = existingRows?.[0];
+
+      // --- Skip unchanged ---
+      if (existing && existing.rev === file.rev) {
+        console.log(`   ⏭️ Skipped (unchanged): ${file.name}`);
+        sortIndex++;
+        continue;
+      }
+
+      // Ensure direct Dropbox link
       const publicUrl = await ensureDirectLink(file.path_lower);
 
+      // Upsert new/updated image
       const { error: imageError } = await supabaseAdmin
         .from("gallery_images")
         .upsert(
           {
+            id: existing?.id, // reuse existing row if present
             gallery_id: gallery.id,
             storage_path: file.path_lower,
             public_url: publicUrl,
             size_bytes: file.size,
+            rev: file.rev, // 🔥 update revision
             display_order: sortIndex,
           },
           { onConflict: "storage_path" }
         );
 
       if (imageError) {
-        console.error(
-          `   ⚠️ Error upserting image ${file.name} (${file.path_lower}):`,
-          imageError
-        );
+        console.error(`   ⚠️ Error syncing ${file.name}:`, imageError);
       } else {
-        console.log(`   ✅ Synced ${file.name} → order ${sortIndex}`);
+        const action = existing ? "🔄 Updated" : "✅ Added";
+        console.log(`   ${action} ${file.name} → order ${sortIndex}`);
       }
 
       sortIndex++;
     }
   }
 
-  console.log("🎉 Dropbox → Supabase sync complete.");
+  console.log("\n🎉 Dropbox → Supabase sync complete.");
 }

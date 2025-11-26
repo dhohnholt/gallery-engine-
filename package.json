@@ -1,20 +1,43 @@
 {
   "name": "gallery-engine",
   "version": "0.2.0",
-  "private": true,
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": false,
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "sync": "node dist/scripts/run-sync.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
-    "dropbox": "^10.34.0",
     "dotenv": "^16.4.5",
+    "dropbox": "^10.34.0",
+    "lucide-react": "^0.554.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "typescript": "^5.6.0"
+  },
+  "exports": {
+    "./react/supabaseClient": {
+      "import": "./dist/src/react/supabaseClient.js",
+      "require": "./dist/src/react/supabaseClient.js"
+    },
+    "./react/pages/MagicGalleryPage": "./dist/src/react/pages/MagicGalleryPage.js",
+    "./react/pages/TeamGalleryPage": "./dist/src/react/pages/TeamGalleryPage.js",
+    "./react/pages/PlayerGalleryPage": "./dist/src/react/pages/PlayerGalleryPage.js",
+    "./react/components/WaterfallGallery": "./dist/src/react/components/WaterfallGallery.js",
+    "./react/components/Lightbox": "./dist/src/react/components/Lightbox.js",
+    "./react/components/GalleryCard": "./dist/src/react/components/GalleryCard.js",
+    "./react/hooks/useGalleryData": "./dist/src/react/hooks/useGalleryData.js",
+    "./react/hooks/useGalleryByMagicLink": "./dist/src/react/hooks/useGalleryByMagicLink.js",
+    "./lib/*": {
+      "node": "./dist/src/lib/*.js",
+      "default": false
+    }
   }
 }

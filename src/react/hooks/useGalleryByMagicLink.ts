@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabaseAnon } from "../../lib/supabaseClient";
-import type { Gallery, GalleryImage, MagicLink } from "../../lib/types";
+import { supabase } from "../supabaseClient";
+
+// IMPORTANT — Use browser-safe shared types
+import type { Gallery, GalleryImage, MagicLink } from "../types"; // <-- NEW (React-safe types)
 
 export interface UseGalleryByMagicLinkResult {
   magicLink: MagicLink | null;
@@ -36,8 +38,8 @@ export function useGalleryByMagicLink(
       setError(null);
 
       try {
-        // 1) Resolve magic link
-        const { data: linkRow, error: linkError } = await supabaseAnon
+        // 1) Load MAGIC LINK
+        const { data: linkRow, error: linkError } = await supabase
           .from("magic_links")
           .select("*")
           .eq("token", token)
@@ -47,79 +49,69 @@ export function useGalleryByMagicLink(
 
         if (!linkRow) {
           if (!cancelled) {
-            setMagicLink(null);
-            setGallery(null);
-            setImages([]);
             setError("Magic link not found or expired.");
           }
           return;
         }
 
-        const linkTyped = linkRow as MagicLink;
+        const link = linkRow as MagicLink;
 
-        // Optional: check expires_at if you want to enforce expiry client-side
-        if (linkTyped.expires_at) {
-          const now = new Date();
-          const expires = new Date(linkTyped.expires_at);
-          if (expires.getTime() < now.getTime()) {
+        // Optional expiry enforcement
+        if (link.expires_at) {
+          const expires = new Date(link.expires_at);
+          if (expires.getTime() < Date.now()) {
             if (!cancelled) {
-              setMagicLink(linkTyped);
-              setGallery(null);
-              setImages([]);
+              setMagicLink(link);
               setError("This link has expired.");
             }
             return;
           }
         }
 
-        // 2) Load gallery
-        const { data: galleryRow, error: galleryError } = await supabaseAnon
+        // 2) Load GALLERY
+        const { data: galleryRow, error: galleryError } = await supabase
           .from("galleries")
           .select("*")
-          .eq("id", linkTyped.gallery_id)
+          .eq("id", link.gallery_id)
           .maybeSingle();
 
         if (galleryError) throw galleryError;
+
         if (!galleryRow) {
           if (!cancelled) {
-            setMagicLink(linkTyped);
-            setGallery(null);
-            setImages([]);
-            setError("Gallery for this link was not found.");
+            setMagicLink(link);
+            setError("Gallery not found.");
           }
           return;
         }
 
-        const galleryTyped = galleryRow as Gallery;
+        const gallery = galleryRow as Gallery;
 
-        // 3) Load images
-        const { data: imageRows, error: imagesError } = await supabaseAnon
+        // 3) Load IMAGES
+        const { data: imageRows, error: imagesError } = await supabase
           .from("gallery_images")
           .select("*")
-          .eq("gallery_id", galleryTyped.id)
+          .eq("gallery_id", gallery.id)
           .order("display_order", { ascending: true });
 
         if (imagesError) throw imagesError;
 
         if (!cancelled) {
-          setMagicLink(linkTyped);
-          setGallery(galleryTyped);
+          setMagicLink(link);
+          setGallery(gallery);
           setImages((imageRows || []) as GalleryImage[]);
         }
       } catch (err: any) {
         if (!cancelled) {
           console.error("[useGalleryByMagicLink] Error:", err);
-          setError(err.message || "Error loading gallery from magic link.");
+          setError(err.message || "Error loading gallery.");
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
     load();
-
     return () => {
       cancelled = true;
     };

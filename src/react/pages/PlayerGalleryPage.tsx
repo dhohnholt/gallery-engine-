@@ -3,7 +3,7 @@ import { useGalleryData } from "../hooks/useGalleryData";
 import { WaterfallGallery } from "../components/WaterfallGallery";
 
 export interface PlayerGalleryPageProps {
-  slug: string;
+  slug: string; // gallery slug (e.g., team folder or player folder slug)
   playerName?: string;
   headingOverride?: string;
   subheadingOverride?: string;
@@ -15,7 +15,7 @@ export const PlayerGalleryPage: React.FC<PlayerGalleryPageProps> = ({
   headingOverride,
   subheadingOverride,
 }) => {
-  const { gallery, images, loading, error } = useGalleryData(slug);
+  const { gallery, images, loading } = useGalleryData(slug);
 
   if (loading) {
     return (
@@ -25,26 +25,23 @@ export const PlayerGalleryPage: React.FC<PlayerGalleryPageProps> = ({
     );
   }
 
-  if (error || !gallery) {
+  if (!gallery) {
     return (
       <section className="py-16 flex items-center justify-center">
         <p className="text-stone-500 text-sm">
-          {error || "We couldn’t find this player gallery."}
+          We couldn’t find this player gallery.
         </p>
       </section>
     );
   }
 
   const heading =
-    headingOverride ||
-    (playerName
-      ? `${playerName} — Photo Gallery`
-      : gallery.title || "Player Gallery");
+    headingOverride || playerName || gallery.title || "Player Photo Gallery";
 
   const subheading =
     subheadingOverride ||
     gallery.description ||
-    "Tap any image to see it larger and swipe through.";
+    "Tap any image to view it larger.";
 
   return (
     <WaterfallGallery

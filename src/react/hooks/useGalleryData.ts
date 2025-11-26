@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabaseAnon } from "../../lib/supabaseClient";
+import { supabase } from "../supabaseClient";
 import type { Gallery, GalleryImage } from "../../lib/types";
 
 export interface UseGalleryDataResult {
@@ -33,8 +33,8 @@ export function useGalleryData(
       setError(null);
 
       try {
-        // 1) Find the gallery by slug
-        const { data: galleryRow, error: galleryError } = await supabaseAnon
+        // 1) Load gallery by slug
+        const { data: galleryRow, error: galleryError } = await supabase
           .from("galleries")
           .select("*")
           .eq("slug", slug)
@@ -53,8 +53,8 @@ export function useGalleryData(
 
         const galleryTyped = galleryRow as Gallery;
 
-        // 2) Load its images
-        const { data: imageRows, error: imagesError } = await supabaseAnon
+        // 2) Load images for this gallery
+        const { data: imageRows, error: imagesError } = await supabase
           .from("gallery_images")
           .select("*")
           .eq("gallery_id", galleryTyped.id)
@@ -67,14 +67,14 @@ export function useGalleryData(
           setImages((imageRows || []) as GalleryImage[]);
         }
       } catch (err: any) {
+        console.error("[useGalleryData] Error:", err);
         if (!cancelled) {
-          console.error("[useGalleryData] Error loading gallery:", err);
           setError(err.message || "Error loading gallery.");
+          setGallery(null);
+          setImages([]);
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 

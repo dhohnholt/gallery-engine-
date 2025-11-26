@@ -13,7 +13,7 @@ export const TeamGalleryPage: React.FC<TeamGalleryPageProps> = ({
   headingOverride,
   subheadingOverride,
 }) => {
-  const { gallery, images, loading, error } = useGalleryData(slug);
+  const { gallery, images, loading } = useGalleryData(slug);
 
   if (loading) {
     return (
@@ -23,21 +23,22 @@ export const TeamGalleryPage: React.FC<TeamGalleryPageProps> = ({
     );
   }
 
-  if (error || !gallery) {
+  if (!gallery) {
     return (
       <section className="py-16 flex items-center justify-center">
         <p className="text-stone-500 text-sm">
-          {error || "We couldn’t find this team gallery."}
+          We couldn’t find this team gallery.
         </p>
       </section>
     );
   }
 
   const heading = headingOverride || gallery.title || "Team Gallery";
+
   const subheading =
     subheadingOverride ||
     gallery.description ||
-    "Scroll through the photos and tap any image to enlarge.";
+    "Tap any image to view it larger.";
 
   return (
     <WaterfallGallery

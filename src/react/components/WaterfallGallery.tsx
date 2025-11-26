@@ -48,7 +48,7 @@ export const WaterfallGallery: React.FC<WaterfallGalleryProps> = ({
             >
               <img
                 src={img.public_url}
-                alt={img.title ?? "Gallery image"}
+                alt={img.storage_path.split("/").pop() ?? "Gallery image"}
                 className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />

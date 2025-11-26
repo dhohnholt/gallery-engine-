@@ -69,7 +69,7 @@ export const Lightbox: React.FC<LightboxProps> = ({
       <div className="relative w-full h-full flex items-center justify-center p-4 sm:p-8">
         <img
           src={img.public_url}
-          alt={img.title ?? "Gallery image"}
+          alt={img.storage_path.split("/").pop() ?? "Gallery image"}
           className="max-w-full max-h-full object-contain"
           onClick={(e) => e.stopPropagation()}
         />

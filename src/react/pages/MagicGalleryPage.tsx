@@ -34,12 +34,7 @@ export const MagicGalleryPage: React.FC<MagicGalleryPageProps> = ({
     );
   }
 
-  const heading =
-    headingOverride ||
-    magicLink?.label ||
-    gallery.title ||
-    "Your Photo Gallery";
-
+  const heading = headingOverride || gallery.title || "Your Photo Gallery";
   const subheading =
     subheadingOverride ||
     gallery.description ||
